@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Management System</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+
+<body>
+    <div class="landing-container">
+        <h1 class="landing-title">Event Management System</h1>
+        <p class="landing-subtitle">Plan and manage your events with ease</p>
+
+        <div class="role-cards">
+            <a href="/login?role=admin" class="role-card">
+                <h3>👔 Admin</h3>
+                <p>Manage users, vendors, and memberships</p>
+            </a>
+
+            <a href="/login?role=vendor" class="role-card">
+                <h3>🏪 Vendor</h3>
+                <p>Manage your products and services</p>
+            </a>
+
+            <a href="/login?role=user" class="role-card">
+                <h3>👤 User</h3>
+                <p>Browse vendors and plan your event</p>
+            </a>
+        </div>
+
+        <div class="mt-20">
+            <p style="color: #666;">New here? <a href="/register" style="color: var(--primary-blue);">Register as User
+                    or Vendor</a></p>
+        </div>
+    </div>
+
+    <script src="/static/js/api.js"></script>
+    <script>
+        // Check if already logged in
+        if (isAuthenticated()) {
+            const user = getCurrentUser();
+            if (user) {
+                redirectToRoleDashboard(user.role);
+            }
+        }
+    </script>
+</body>
+
+</html>

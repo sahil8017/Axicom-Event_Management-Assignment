@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Event Management System</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+
+<body>
+    <div class="container">
+        <!-- Top Navigation -->
+        <div class="top-nav">
+            <a href="/" class="nav-btn">CHART</a>
+            <a href="/" class="nav-btn">BACK</a>
+        </div>
+
+        <!-- Header -->
+        <div class="header-title" id="pageTitle">Event Management System</div>
+
+        <!-- Login Form -->
+        <form id="loginForm">
+            <div class="form-row">
+                <span class="label-btn">User Id</span>
+                <input type="email" class="input-field" id="email" placeholder="Enter your email" required>
+            </div>
+
+            <div class="form-row">
+                <span class="label-btn">Password</span>
+                <input type="password" class="input-field" id="password" placeholder="Enter your password" required>
+            </div>
+
+            <div class="btn-row">
+                <button type="button" class="btn-action" onclick="window.location.href='/'">Cancel</button>
+                <button type="submit" class="btn-action primary">Login</button>
+            </div>
+        </form>
+
+        <div class="text-center mt-20" id="registerLink">
+            <p style="color: #666;">New user? <a href="/register" style="color: var(--primary-blue);">Register here</a>
+            </p>
+        </div>
+    </div>
+
+    <script src="/static/js/api.js"></script>
+    <script>
+        // Get role from URL params
+        const urlParams = new URLSearchParams(window.location.search);
+        const role = urlParams.get('role');
+
+        // Update page title based on role
+        const titleMap = {
+            'admin': 'Admin Login',
+            'vendor': 'Vendor Login',
+            'user': 'User Login'
+        };
+
+        if (role && titleMap[role]) {
+            document.getElementById('pageTitle').textContent = titleMap[role];
+        }
+
+        // Handle login
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const result = await authAPI.login(email, password);
+
+                // Store auth data
+                setToken(result.token);
+                setCurrentUser(result.user);
+
+                // Redirect to appropriate dashboard
+                redirectToRoleDashboard(result.user.role);
+            } catch (error) {
+                showAlert(error.message || 'Login failed', 'error');
+            }
+        });
+
+        // Check if already logged in
+        if (isAuthenticated()) {
+            const user = getCurrentUser();
+            if (user) {
+                redirectToRoleDashboard(user.role);
+            }
+        }
+    </script>
+</body>
+
+</html>
