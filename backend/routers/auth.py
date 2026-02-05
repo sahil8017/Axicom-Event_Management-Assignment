@@ -87,12 +87,11 @@ def register_vendor(data: VendorRegister, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(user)
     
-    # Create vendor profile
+    # Create vendor profile (no category - products have categories)
     vendor = Vendor(
         user_id=user.id,
         company_name=data.company_name,
-        category=data.category,
-        membership_status="pending"
+        membership_status="active"  # Vendors are active by default
     )
     db.add(vendor)
     db.commit()

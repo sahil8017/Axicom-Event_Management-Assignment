@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from typing import List
 
 from database import get_db
@@ -18,7 +18,15 @@ def get_current_vendor(current_user: User = Depends(get_current_user), db: Sessi
     
     vendor = db.query(Vendor).filter(Vendor.user_id == current_user.id).first()
     if not vendor:
-        raise HTTPException(status_code=404, detail="Vendor profile not found")
+        # Auto-create vendor profile for users with vendor role but missing profile
+        vendor = Vendor(
+            user_id=current_user.id,
+            company_name=f"{current_user.name}'s Company",
+            membership_status="active"
+        )
+        db.add(vendor)
+        db.commit()
+        db.refresh(vendor)
     
     return vendor
 
@@ -37,6 +45,7 @@ def create_item(data: ItemCreate, vendor: Vendor = Depends(get_current_vendor), 
         name=data.name,
         description=data.description,
         price=data.price,
+        category=data.category,  # Category is now on item, not vendor
         status="pending"
     )
     db.add(item)
@@ -79,7 +88,7 @@ def delete_item(item_id: int, vendor: Vendor = Depends(get_current_vendor), db: 
 # ============ User Requests / Orders ============
 @router.get("/requests", response_model=List[OrderResponse])
 def list_requests(vendor: Vendor = Depends(get_current_vendor), db: Session = Depends(get_db)):
-    orders = db.query(Order).filter(Order.vendor_id == vendor.id).all()
+    orders = db.query(Order).options(joinedload(Order.order_items)).filter(Order.vendor_id == vendor.id).all()
     return orders
 
 
@@ -102,7 +111,6 @@ def get_vendor_profile(vendor: Vendor = Depends(get_current_vendor), current_use
         "id": vendor.id,
         "user_id": vendor.user_id,
         "company_name": vendor.company_name,
-        "category": vendor.category,
         "membership_status": vendor.membership_status,
         "user_name": current_user.name,
         "user_email": current_user.email

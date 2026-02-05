@@ -173,6 +173,7 @@
             <div class="management-section">
                 <div class="section-label">Membership</div>
                 <div class="section-actions">
+                    <button class="admin-btn" onclick="showPage('vendors-list-page')">View All Vendors</button>
                     <button class="admin-btn" onclick="showAddMembershipModal()">Add</button>
                     <button class="admin-btn" onclick="showUpdateMembershipModal()">Update</button>
                 </div>
@@ -234,12 +235,18 @@
                 <button class="admin-btn" onclick="logout()">LogOut</button>
             </div>
 
+            <div class="welcome-header">Vendor Management</div>
+
+            <div style="text-align: center; margin-bottom: 20px;">
+                <button class="admin-btn" style="background: #90ee90;" onclick="activateAllVendors()">Activate All
+                    Vendors</button>
+            </div>
+
             <table class="admin-table">
                 <thead>
                     <tr>
                         <th>ID</th>
                         <th>Company</th>
-                        <th>Category</th>
                         <th>Status</th>
                         <th>Actions</th>
                     </tr>
@@ -348,7 +355,7 @@
                     <select id="memberStatus">
                         <option value="active">Active</option>
                         <option value="pending">Pending</option>
-                        <option value="suspended">Suspended</option>
+                        <option value="inactive">Inactive</option>
                     </select>
                 </div>
                 <button type="submit" class="admin-form-submit">Add</button>
@@ -372,7 +379,7 @@
                     <select id="updateMemberStatus">
                         <option value="active">Active</option>
                         <option value="pending">Pending</option>
-                        <option value="suspended">Suspended</option>
+                        <option value="inactive">Inactive</option>
                     </select>
                 </div>
                 <button type="submit" class="admin-form-submit">Update</button>
@@ -382,7 +389,7 @@
         </div>
     </div>
 
-    <script src="/static/js/api.js"></script>
+    <script src="/static/js/api.js?v=2"></script>
     <script>
         // Check auth
         if (!requireAuth('admin')) {
@@ -459,7 +466,7 @@
                 const tbody = document.getElementById('vendorsTableBody');
 
                 if (vendors.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5">No vendors found.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="4">No vendors found.</td></tr>';
                     return;
                 }
 
@@ -467,15 +474,52 @@
                     <tr>
                         <td>${vendor.id}</td>
                         <td>${vendor.company_name}</td>
-                        <td>${vendor.category}</td>
                         <td>${vendor.membership_status}</td>
                         <td>
-                            <button class="admin-btn" style="padding: 8px 20px;" onclick="updateVendorStatus(${vendor.id})">Update Status</button>
+                            ${vendor.membership_status !== 'active' ?
+                        `<button class="admin-btn" style="padding: 8px 15px; background: #90ee90;" onclick="activateVendor(${vendor.id})">Activate</button>` :
+                        `<button class="admin-btn" style="padding: 8px 15px;" onclick="deactivateVendor(${vendor.id})">Deactivate</button>`
+                    }
                         </td>
                     </tr>
                 `).join('');
             } catch (error) {
                 console.error('Failed to load vendors:', error);
+            }
+        }
+
+        // Activate Vendor
+        async function activateVendor(vendorId) {
+            try {
+                await adminAPI.updateMembership(vendorId, { membership_status: 'active' });
+                loadVendors();
+                alert('Vendor activated successfully!');
+            } catch (error) {
+                alert('Failed to activate vendor: ' + error.message);
+            }
+        }
+
+        // Deactivate Vendor
+        async function deactivateVendor(vendorId) {
+            try {
+                await adminAPI.updateMembership(vendorId, { membership_status: 'inactive' });
+                loadVendors();
+                alert('Vendor deactivated.');
+            } catch (error) {
+                alert('Failed to deactivate vendor: ' + error.message);
+            }
+        }
+
+        // Activate All Vendors
+        async function activateAllVendors() {
+            if (confirm('This will activate ALL pending/inactive vendors. Continue?')) {
+                try {
+                    const result = await adminAPI.activateAllVendors();
+                    loadVendors();
+                    alert(result.message || 'All vendors activated!');
+                } catch (error) {
+                    alert('Failed to activate vendors: ' + error.message);
+                }
             }
         }
 
@@ -502,8 +546,8 @@
 
         // Update Vendor Status
         async function updateVendorStatus(vendorId) {
-            const status = prompt('Enter new status (active/pending/suspended):');
-            if (status && ['active', 'pending', 'suspended'].includes(status)) {
+            const status = prompt('Enter new status (active/pending/inactive):');
+            if (status && ['active', 'pending', 'inactive'].includes(status)) {
                 try {
                     await adminAPI.updateMembership(vendorId, { membership_status: status });
                     loadVendors();

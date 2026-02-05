@@ -54,7 +54,22 @@ async function apiRequest(endpoint, method = 'GET', data = null) {
         const result = await response.json();
 
         if (!response.ok) {
-            throw new Error(result.detail || 'Request failed');
+            // Handle validation errors (422) which have array of errors
+            let errorMessage = 'Request failed';
+            if (result.detail) {
+                if (typeof result.detail === 'string') {
+                    errorMessage = result.detail;
+                } else if (Array.isArray(result.detail)) {
+                    // Pydantic validation errors
+                    errorMessage = result.detail.map(err => {
+                        const field = err.loc ? err.loc.join('.') : 'field';
+                        return `${field}: ${err.msg}`;
+                    }).join(', ');
+                } else if (typeof result.detail === 'object') {
+                    errorMessage = JSON.stringify(result.detail);
+                }
+            }
+            throw new Error(errorMessage);
         }
 
         return result;
@@ -81,6 +96,7 @@ const adminAPI = {
     listVendors: () => apiRequest('/admin/vendors'),
     updateVendor: (id, data) => apiRequest(`/admin/vendors/${id}`, 'PUT', data),
     updateMembership: (id, data) => apiRequest(`/admin/memberships/${id}`, 'PUT', data),
+    activateAllVendors: () => apiRequest('/admin/memberships/activate-all', 'PUT'),
     // Product approval
     listItems: () => apiRequest('/admin/items'),
     approveItem: (id) => apiRequest(`/admin/items/${id}/approve`, 'PUT'),
@@ -101,8 +117,9 @@ const vendorAPI = {
 
 // User API
 const userAPI = {
-    listVendors: () => apiRequest('/user/vendors'),
+    listVendors: (category = '') => apiRequest(`/user/vendors${category ? `?category=${category}` : ''}`),
     getVendorItems: (vendorId) => apiRequest(`/user/vendors/${vendorId}/items`),
+    listItems: (category = '') => apiRequest(`/user/items${category ? `?category=${category}` : ''}`),
     getCart: () => apiRequest('/user/cart'),
     addToCart: (data) => apiRequest('/user/cart', 'POST', data),
     removeFromCart: (id) => apiRequest(`/user/cart/${id}`, 'DELETE'),

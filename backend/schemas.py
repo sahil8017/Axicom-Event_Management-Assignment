@@ -8,7 +8,7 @@ VALID_ROLES = ["user", "vendor", "admin"]
 VALID_CATEGORIES = ["Catering", "Florist", "Decoration", "Lighting"]
 VALID_MEMBERSHIP_STATUS = ["pending", "active", "inactive"]
 VALID_PRODUCT_STATUS = ["pending", "approved", "rejected"]
-VALID_ORDER_STATUS = ["Pending", "Confirmed", "Completed", "Cancelled"]
+VALID_ORDER_STATUS = ["Pending", "Confirmed", "Completed", "Cancelled", "Received", "Ready for Shipping", "Out For Delivery", "Delivered"]
 VALID_PAYMENT_STATUS = ["pending", "completed", "failed"]
 VALID_RSVP_STATUS = ["Pending", "Confirmed", "Declined"]
 
@@ -38,14 +38,6 @@ class VendorRegister(BaseModel):
     email: EmailStr
     password: str = Field(..., min_length=6, max_length=100)
     company_name: str = Field(..., min_length=1, max_length=200)
-    category: str
-
-    @field_validator('category')
-    @classmethod
-    def category_must_be_valid(cls, v: str) -> str:
-        if v not in VALID_CATEGORIES:
-            raise ValueError(f'Category must be one of: {", ".join(VALID_CATEGORIES)}')
-        return v
 
 
 class UserResponse(BaseModel):
@@ -67,24 +59,14 @@ class LoginResponse(BaseModel):
 # ============ Vendor Schemas ============
 class VendorCreate(BaseModel):
     company_name: str = Field(..., min_length=1, max_length=200)
-    category: str
-
-    @field_validator('category')
-    @classmethod
-    def category_must_be_valid(cls, v: str) -> str:
-        if v not in VALID_CATEGORIES:
-            raise ValueError(f'Category must be one of: {", ".join(VALID_CATEGORIES)}')
-        return v
 
 
 class VendorResponse(BaseModel):
     id: int
-    user_id: int
+    user_id: Optional[int] = None
     company_name: str
-    category: str
     membership_status: str
     created_at: datetime
-    user: Optional[UserResponse] = None
 
     class Config:
         from_attributes = True
@@ -92,15 +74,7 @@ class VendorResponse(BaseModel):
 
 class VendorUpdate(BaseModel):
     company_name: Optional[str] = Field(None, min_length=1, max_length=200)
-    category: Optional[str] = None
     membership_status: Optional[str] = None
-
-    @field_validator('category')
-    @classmethod
-    def category_must_be_valid(cls, v: Optional[str]) -> Optional[str]:
-        if v is not None and v not in VALID_CATEGORIES:
-            raise ValueError(f'Category must be one of: {", ".join(VALID_CATEGORIES)}')
-        return v
 
     @field_validator('membership_status')
     @classmethod
@@ -115,6 +89,7 @@ class ItemCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=200)
     description: Optional[str] = Field("", max_length=1000)
     price: float = Field(..., gt=0, description="Price must be greater than 0")
+    category: str = Field(..., description="Product category")
 
     @field_validator('name')
     @classmethod
@@ -122,6 +97,13 @@ class ItemCreate(BaseModel):
         if not v.strip():
             raise ValueError('Name cannot be empty or whitespace')
         return v.strip()
+
+    @field_validator('category')
+    @classmethod
+    def category_must_be_valid(cls, v: str) -> str:
+        if v not in VALID_CATEGORIES:
+            raise ValueError(f'Category must be one of: {", ".join(VALID_CATEGORIES)}')
+        return v
 
 
 class ItemUpdate(BaseModel):
@@ -144,6 +126,7 @@ class ItemResponse(BaseModel):
     name: str
     description: Optional[str]
     price: float
+    category: str
     status: str
     created_at: datetime
 
@@ -160,6 +143,15 @@ class OrderItemCreate(BaseModel):
 class OrderCreate(BaseModel):
     vendor_id: int = Field(..., gt=0)
     items: List[OrderItemCreate] = Field(..., min_length=1)
+    # Delivery Details
+    customer_name: Optional[str] = None
+    customer_email: Optional[str] = None
+    customer_phone: Optional[str] = None
+    address: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    pincode: Optional[str] = None
+    payment_method: Optional[str] = None
 
 
 class OrderItemResponse(BaseModel):
@@ -180,6 +172,16 @@ class OrderResponse(BaseModel):
     payment_status: str
     order_status: str
     created_at: datetime
+    # Delivery Details
+    customer_name: Optional[str] = None
+    customer_email: Optional[str] = None
+    customer_phone: Optional[str] = None
+    address: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    pincode: Optional[str] = None
+    payment_method: Optional[str] = None
+    
     order_items: List[OrderItemResponse] = []
 
     class Config:

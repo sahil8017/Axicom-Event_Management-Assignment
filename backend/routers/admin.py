@@ -89,8 +89,6 @@ def update_vendor(vendor_id: int, data: VendorUpdate, db: Session = Depends(get_
     
     if data.company_name:
         vendor.company_name = data.company_name
-    if data.category:
-        vendor.category = data.category
     if data.membership_status:
         vendor.membership_status = data.membership_status
     
@@ -100,6 +98,16 @@ def update_vendor(vendor_id: int, data: VendorUpdate, db: Session = Depends(get_
 
 
 # ============ Membership Management ============
+@router.put("/memberships/activate-all")
+def activate_all_vendors(db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    """Activate all pending vendors at once"""
+    result = db.query(Vendor).filter(Vendor.membership_status != "active").update(
+        {"membership_status": "active"}
+    )
+    db.commit()
+    return {"message": f"Activated {result} vendors"}
+
+
 @router.put("/memberships/{vendor_id}", response_model=VendorResponse)
 def update_membership(vendor_id: int, data: MembershipUpdate, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
     vendor = db.query(Vendor).filter(Vendor.id == vendor_id).first()

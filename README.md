@@ -98,8 +98,9 @@ Once the server is running, visit:
 │   ├── user-dashboard.html
 │   ├── css/
 │   │   └── styles.css
-│   └── js/
-│       └── api.js        # API client utilities
+│   ├── js/
+│   │   └── api.js        # API client utilities
+│   └── products/         # Product images storage
 ├── .env                  # Environment variables (not in git)
 ├── .env.example          # Environment template
 ├── .gitignore

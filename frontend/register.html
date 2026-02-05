@@ -89,20 +89,6 @@
             </div>
 
             <div class="form-row">
-                <span class="label-btn">Category</span>
-                <select class="select-field" id="category" required>
-                    <option value="">Select Category</option>
-                    <option value="Catering">Catering</option>
-                    <option value="Florist">Florist</option>
-                    <option value="Decoration">Decoration</option>
-                    <option value="Lighting">Lighting</option>
-                    <option value="Photography">Photography</option>
-                    <option value="Music">Music</option>
-                    <option value="Other">Other</option>
-                </select>
-            </div>
-
-            <div class="form-row">
                 <span class="label-btn">Company</span>
                 <input type="text" class="input-field" id="companyName" placeholder="Enter company name" required>
             </div>
@@ -165,8 +151,7 @@
                 name: document.getElementById('vendorName').value,
                 email: document.getElementById('vendorEmail').value,
                 password: document.getElementById('vendorPassword').value,
-                company_name: document.getElementById('companyName').value,
-                category: document.getElementById('category').value
+                company_name: document.getElementById('companyName').value
             };
 
             try {

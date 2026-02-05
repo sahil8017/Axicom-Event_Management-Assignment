@@ -73,8 +73,7 @@ class Vendor(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), unique=True)
     company_name = Column(String(200), nullable=False)
-    category = Column(String(50), nullable=False)
-    membership_status = Column(String(20), default=MembershipStatus.PENDING.value)
+    membership_status = Column(String(20), default=MembershipStatus.ACTIVE.value)  # Active by default
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationships
@@ -91,6 +90,7 @@ class Item(Base):
     name = Column(String(200), nullable=False)
     description = Column(Text)
     price = Column(Float, nullable=False)
+    category = Column(String(50), nullable=False)  # Category belongs to product now
     status = Column(String(20), default=ProductStatus.PENDING.value)
     created_at = Column(DateTime, default=datetime.utcnow)
 
@@ -109,6 +109,17 @@ class Order(Base):
     total_amount = Column(Float, default=0.0)
     payment_status = Column(String(20), default=PaymentStatus.PENDING.value)
     order_status = Column(String(20), default=OrderStatus.PENDING.value)
+    
+    # Delivery Details
+    customer_name = Column(String(100), nullable=True)
+    customer_email = Column(String(100), nullable=True)
+    customer_phone = Column(String(20), nullable=True)
+    address = Column(String(500), nullable=True)
+    city = Column(String(100), nullable=True)
+    state = Column(String(100), nullable=True)
+    pincode = Column(String(20), nullable=True)
+    payment_method = Column(String(50), nullable=True)
+
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationships

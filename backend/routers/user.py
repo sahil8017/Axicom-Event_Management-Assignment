@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from typing import List
 
 from database import get_db
@@ -24,14 +24,30 @@ def require_user(current_user: User = Depends(get_current_user)) -> User:
 # ============ Browse Vendors ============
 @router.get("/vendors", response_model=List[VendorResponse])
 def list_vendors(db: Session = Depends(get_db), user: User = Depends(require_user)):
-    vendors = db.query(Vendor).filter(Vendor.membership_status == "active").all()
-    return vendors
+    """List all active vendors"""
+    return db.query(Vendor).filter(Vendor.membership_status == "active").all()
 
 
 @router.get("/vendors/{vendor_id}/items", response_model=List[ItemResponse])
-def get_vendor_items(vendor_id: int, db: Session = Depends(get_db), user: User = Depends(require_user)):
-    items = db.query(Item).filter(Item.vendor_id == vendor_id, Item.status == "approved").all()
-    return items
+def get_vendor_items(vendor_id: int, category: str = None, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    """Get approved items from a vendor, optionally filtered by category"""
+    query = db.query(Item).filter(Item.vendor_id == vendor_id, Item.status == "approved")
+    if category:
+        query = query.filter(Item.category == category)
+    return query.all()
+
+
+# ============ Browse All Items ============
+@router.get("/items", response_model=List[ItemResponse])
+def list_all_items(category: str = None, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    """List all approved items from active vendors, optionally filtered by PRODUCT category"""
+    query = db.query(Item).join(Vendor).filter(
+        Item.status == "approved",
+        Vendor.membership_status == "active"
+    )
+    if category:
+        query = query.filter(Item.category == category)  # Filter by Item category now
+    return query.all()
 
 
 # ============ Cart Management ============
@@ -101,7 +117,7 @@ def clear_cart(db: Session = Depends(get_db), user: User = Depends(require_user)
 # ============ Orders ============
 @router.get("/orders", response_model=List[OrderResponse])
 def list_orders(db: Session = Depends(get_db), user: User = Depends(require_user)):
-    orders = db.query(Order).filter(Order.user_id == user.id).all()
+    orders = db.query(Order).options(joinedload(Order.order_items)).filter(Order.user_id == user.id).all()
     return orders
 
 
@@ -123,7 +139,15 @@ def create_order(data: OrderCreate, db: Session = Depends(get_db), user: User = 
         vendor_id=data.vendor_id,
         total_amount=total,
         payment_status="pending",
-        order_status="Pending"
+        order_status="Pending",
+        customer_name=data.customer_name,
+        customer_email=data.customer_email,
+        customer_phone=data.customer_phone,
+        address=data.address,
+        city=data.city,
+        state=data.state,
+        pincode=data.pincode,
+        payment_method=data.payment_method
     )
     db.add(order)
     db.commit()
